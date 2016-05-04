@@ -1,7 +1,6 @@
 package main.java;
 
 import main.java.handlers.BoardHandler;
-import main.java.models.Board;
 import main.java.models.repositories.*;
 import main.java.transformer.JsonTransformer;
 
@@ -37,6 +36,14 @@ public class BoardService
         delete("/boards/:gameid", (request, response) -> boardHandler.deleteBoard(request.params(":gameid"), request,response),jsonTransformer);
 
         //BOARDS{GAMEID}PAWNS
+        get("/boards/:gameid/pawns",(request, response) -> boardHandler.getAllPawnsForBoard(request.params(":gameid"),request,response),jsonTransformer);
+        post("/boards/:gameid/pawns",(request, response) -> boardHandler.createPawnForBoard(request.params(":gameid"),request,response),jsonTransformer);
+
+        //BOARDS{GAMEID}PAWNS{PAWNID}
+        get("/boards/:gameid/pawns/:pawnid", (request, response) -> boardHandler.getPawnForBoard(request.params(":gameid"),request.params(":pawnid"),request,response),jsonTransformer );
+        put("/boards/:gameid/pawns/:pawnid", (request, response) -> boardHandler.saveOrCreatePawnForBoard(request.params(":gameid"),request.params(":pawnid"),request,response),jsonTransformer);
+        delete("/boards/:gameid/pawns/:pawnid", (request, response) -> boardHandler.deletePawnForBoard(request.params(":gameid"),request.params(":pawnid"),request,response),jsonTransformer);
+
 
     }
 

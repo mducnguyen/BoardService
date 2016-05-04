@@ -1,16 +1,19 @@
 package main.java.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion;
 import main.java.handlers.requestforms.BoardForm;
 import main.java.handlers.requestforms.FieldForm;
+import main.java.handlers.requestforms.PawnForm;
 import main.java.handlers.requestforms.PositionForm;
 import main.java.handlers.responseobjects.BoardResponseObj;
 import main.java.handlers.responseobjects.BoardsResponseObj;
+import main.java.handlers.responseobjects.PawnResponseObj;
+import main.java.handlers.responseobjects.PawnsResponseObj;
 import main.java.models.Board;
 import main.java.models.Field;
 import main.java.models.Pawn;
 import main.java.models.repositories.*;
+import main.java.models.repositories.exceptions.AlreadyExistException;
 import main.java.models.repositories.exceptions.CannotCreateException;
 import org.apache.http.HttpStatus;
 import spark.Request;
@@ -64,6 +67,7 @@ public class BoardHandler
             Board board = new Board(boardForm.getGame(), new ArrayList<>(),new HashMap<>());
             try {
                 boardRepo.createBoard(board);
+                pawnRepo.createPawnListForBoard(board);
                 response.status(HttpStatus.SC_CREATED);
                 return new BoardResponseObj(board);
             }catch (CannotCreateException e){
@@ -100,6 +104,7 @@ public class BoardHandler
             BoardForm boardForm = (new ObjectMapper()).readValue(request.body(), BoardForm.class);
             Board board = new Board(boardForm.getGame(),getFields(boardForm.getFields()),getPositionMapping(boardForm.getPositions()));
             boardRepo.saveOrUpdateBoard(board);
+            pawnRepo.createPawnListForBoard(board);
             responseObj = new BoardResponseObj(board);
             response.status(HttpStatus.SC_OK);
         } catch (IOException e) {
@@ -127,9 +132,12 @@ public class BoardHandler
     {
         List<Pawn> pawns = new ArrayList<>();
 
-        for (String pawnId: pawnIds
+        for (String pawnUri: pawnIds
              ) {
-            Pawn pawn = pawnRepo.findPawn(pawnId);
+            String[] idArr = pawnUri.split("/");
+            String gameId= idArr[idArr.length-3];
+            String pawnId= idArr[idArr.length-1];
+            Pawn pawn = pawnRepo.findPawn(gameId,pawnId);
             if (pawn != null){
                 pawns.add(pawn);
             }
@@ -137,37 +145,157 @@ public class BoardHandler
         return pawns;
     }
 
-    private Map<Pawn,Integer> getPositionMapping(List<PositionForm> positions)
+    private Map<String,Integer> getPositionMapping(List<PositionForm> positions)
     {
-        Map<Pawn, Integer> postionsMap = new HashMap<>();
+        Map<String, Integer> postionsMap = new HashMap<>();
 
         for (PositionForm posform: positions
              ) {
-            String[] strArr = posform.getPawn().split("/");
-            String pawnId = strArr[strArr.length-1];
-
-            Pawn pawn = pawnRepo.findPawn(pawnId);
+            String[] idArr = posform.getPawn().split("/");
+            String gameId= idArr[idArr.length-3];
+            String pawnId= idArr[idArr.length-1];
+            Pawn pawn = pawnRepo.findPawn(gameId,pawnId);
             if (pawn != null){
-                postionsMap.put(pawn, posform.getPosition());
+                postionsMap.put(pawn.getId(), posform.getPosition());
             }
         }
 
         return  postionsMap;
     }
 
-    public String deleteBoard(String gameid, Request request, Response response)
+    public String deleteBoard(String boardId, Request request, Response response)
     {
-        Board board = boardRepo.findBoard(gameid);
+        Board board = boardRepo.findBoard(boardId);
         if (board != null){
-            for (Pawn pawn: board.getPawns()
+            for (String pawnId: board.getPawns()
                  ) {
-                pawnRepo.deletePawn(pawn);
+                pawnRepo.deletePawn(boardId,pawnId);
             }
+            pawnRepo.deleteBoard(boardId);
             boardRepo.deleteBoard(board);
         } else {
             response.status(HttpStatus.SC_NOT_FOUND);
         }
 
         return "Board was deleted";
+    }
+
+    public PawnsResponseObj getAllPawnsForBoard(String gameId, Request request, Response response)
+    {
+        List<Pawn> pawnList =  pawnRepo.findPawnsForBoard(gameId);
+        List<String> pawnIds = new ArrayList<>();
+        if(pawnList != null && pawnList.size() != 0){
+            for (Pawn pawn: pawnList
+                 ) {
+                pawnIds.add(pawn.getId());
+            }
+        }
+        PawnsResponseObj responseObj = new PawnsResponseObj(gameId, pawnIds);
+        response.status(HttpStatus.SC_OK);
+        return responseObj;
+    }
+
+    public PawnResponseObj getPawnForBoard(String gameId, String pawnId, Request request, Response response)
+    {
+        Board board = boardRepo.findBoard(gameId);
+
+        if(board == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        Pawn pawn = pawnRepo.findPawn(gameId,pawnId);
+
+        if(pawn == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        response.status(HttpStatus.SC_OK);
+        return new PawnResponseObj(board,pawn);
+    }
+
+    public PawnResponseObj createPawnForBoard(String boardId, Request request, Response response)
+    {
+        Board board = boardRepo.findBoard(boardId);
+
+        if(board == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        PawnForm pawnForm;
+
+        try {
+            pawnForm = new ObjectMapper().readValue(request.body(),PawnForm.class);
+            Pawn pawn = new Pawn(board.getId(),pawnForm.getPlace(),pawnForm.getPlayer(),pawnForm.getRoll(),pawnForm.getRoll());
+            pawnRepo.addPawnToBoard(boardId,pawn);
+            board.updatePosition(pawn.getId(), pawnForm.getPosition());
+            response.status(HttpStatus.SC_CREATED);
+
+            PawnResponseObj responseObj = new PawnResponseObj(board,pawn);
+            return  responseObj;
+        } catch (IOException e) {
+            e.printStackTrace();
+            response.status(HttpStatus.SC_BAD_REQUEST);
+        } catch (AlreadyExistException | CannotCreateException e ) {
+            response.status(HttpStatus.SC_CONFLICT);
+        }
+
+        return null;
+    }
+
+    public PawnResponseObj saveOrCreatePawnForBoard(String boardId, String pawnId, Request request, Response response)
+    {
+        Board board = boardRepo.findBoard(boardId);
+
+        if(board == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        Pawn pawn = pawnRepo.findPawn(boardId,pawnId);
+
+        if(pawn == null){
+            return createPawnForBoard(boardId,request,response);
+        }
+
+        PawnForm pawnForm;
+
+        try {
+            pawnForm = new ObjectMapper().readValue(request.body(),PawnForm.class);
+            pawn.setMove(pawnForm.getMove());
+            pawn.setPlace(pawnForm.getPlace());
+            pawn.setRoll(pawnForm.getRoll());
+            board.updatePosition(pawn.getId(),pawnForm.getPosition());
+
+            response.status(HttpStatus.SC_OK);
+            return new PawnResponseObj(board,pawn);
+        } catch (IOException e) {
+            response.status(HttpStatus.SC_BAD_REQUEST);
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public String deletePawnForBoard(String boardId, String pawnId, Request request, Response response)
+    {
+        Board board = boardRepo.findBoard(boardId);
+
+        if(board == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return "Board does not exists";
+        }
+
+
+        if(pawnRepo.findPawn(boardId,pawnId) == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return "Pawn does not exists";
+        }
+
+        pawnRepo.deletePawn(boardId,pawnId);
+        response.status(HttpStatus.SC_OK);
+        return "Pawn was deleted";
     }
 }

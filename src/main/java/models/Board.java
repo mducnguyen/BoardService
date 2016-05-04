@@ -15,8 +15,8 @@ public class Board
     private String id;
     private String game;
     private List<Field> fields;
-    private Map<Pawn, Integer> positions;
-    public Board(String game, List<Field> fields, Map<Pawn,Integer> positions)
+    private Map<String, Integer> positions;
+    public Board(String game, List<Field> fields, Map<String,Integer> positions)
     {
         this.game = game;
         String[] strArr =  game.split("/");
@@ -35,11 +35,11 @@ public class Board
         return id;
     }
 
-    public List<Pawn> getPawns() {
+    public List<String> getPawns() {
 
-        List<Pawn> pawns = new ArrayList<>();
+        List<String> pawns = new ArrayList<>();
 
-        for (Map.Entry<Pawn,Integer> entry : positions.entrySet()
+        for (Map.Entry<String,Integer> entry : positions.entrySet()
              ) {
             pawns.add(entry.getKey());
         }
@@ -52,9 +52,17 @@ public class Board
         return fields;
     }
 
-    public Map<Pawn, Integer> getPositions()
+    public Map<String, Integer> getPositions()
     {
         return positions;
     }
 
+    public void updatePosition(String pawn, int position){
+        positions.put(pawn,position);
+    }
+
+    public int getPositionOfPawn(String pawn)
+    {
+        return positions.get(pawn);
+    }
 }

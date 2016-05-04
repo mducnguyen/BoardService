@@ -40,14 +40,13 @@ public class BoardResponseObj
     private List<String> getPawns(Board board)
     {
         if(board.getPawns() != null) {
-            List<String> pawnResponseObjs = new ArrayList<>();
-            Map<Pawn, Integer> positions = board.getPositions();
-            for (Map.Entry<Pawn, Integer> entry : positions.entrySet()
+            List<String> pawnIds = new ArrayList<>();
+            Map<String, Integer> positions = board.getPositions();
+            for (Map.Entry<String, Integer> entry : positions.entrySet()
                     ) {
-                PawnResponseObj pawnResonseObj = new PawnResponseObj(entry.getKey(), board.getId());
-                pawnResponseObjs.add(pawnResonseObj.getId());
+                pawnIds.add(entry.getKey());
             }
-            return pawnResponseObjs;
+            return pawnIds;
         }else {
             return new ArrayList<>();
         }
@@ -66,11 +65,10 @@ public class BoardResponseObj
     {
         if(board.getPositions() != null) {
             List<PositionResponseObj> positionResponses = new ArrayList<>();
-            Map<Pawn, Integer> positions = board.getPositions();
-            for (Map.Entry<Pawn, Integer> entry : positions.entrySet()
+            Map<String, Integer> positions = board.getPositions();
+            for (Map.Entry<String, Integer> entry : positions.entrySet()
                     ) {
-                PawnResponseObj pawnResonseObj = new PawnResponseObj(entry.getKey(), board.getId());
-                PositionResponseObj posRes = new PositionResponseObj(pawnResonseObj.getId(), entry.getValue());
+                PositionResponseObj posRes = new PositionResponseObj(entry.getKey(), entry.getValue());
                 positionResponses.add(posRes);
             }
             return positionResponses;

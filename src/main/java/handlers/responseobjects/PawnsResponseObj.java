@@ -1,5 +1,7 @@
 package main.java.handlers.responseobjects;
 
+import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,14 +9,15 @@ import java.util.List;
  * @author DucNguyenMinh
  * @since 04/05/16
  */
+@Data
 public class PawnsResponseObj
 {
     private static final String BOARD_BASE_PATH = "/boards";
-    private final List<String> pawnsIds;
+    private final List<String> pawns;
 
     public PawnsResponseObj(String gameId,List<String> pawnsIds)
     {
-        this.pawnsIds = getResponseIds(gameId,pawnsIds);
+        this.pawns = getResponseIds(gameId,pawnsIds);
     }
 
     private List<String> getResponseIds(String gameId,List<String> pawnsIds)
