@@ -1,4 +1,4 @@
-package main.java.models;
+package main.java.logiccontroller;
 
 import java.util.List;
 
@@ -9,21 +9,21 @@ import java.util.List;
 public class Field
 {
     private String place;
-    private List<Pawn> pawns;
 
-    public Field(String place, List<Pawn> pawns)
+    private List<String> pawns;
+
+    public Field(String place, List<String> pawns)
     {
         this.place = place;
         this.pawns = pawns;
     }
-
 
     public String getPlace()
     {
         return place;
     }
 
-    public List<Pawn> getPawns()
+    public List<String> getPawns()
     {
         return pawns;
     }

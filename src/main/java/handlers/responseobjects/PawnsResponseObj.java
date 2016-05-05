@@ -30,4 +30,9 @@ public class PawnsResponseObj
 
         return responseIds;
     }
+
+    public List<String> getPawns()
+    {
+        return pawns;
+    }
 }

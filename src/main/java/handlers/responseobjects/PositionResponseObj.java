@@ -15,9 +15,9 @@ public class PositionResponseObj
 
     private PositionResponseObj(){}
 
-    public PositionResponseObj(String pawn, int position)
+    public PositionResponseObj(String boardId,String pawn, int position)
     {
-        this.pawn = pawn;
+        this.pawn = "/boards/"+boardId+"/pawns/"+pawn;
         this.position = position;
     }
 }

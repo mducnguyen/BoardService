@@ -18,7 +18,7 @@ public interface IBoardRepository extends Repository
 
     Board findBoard(String gameid);
 
-    Board saveOrUpdateBoard(Board board);
+    Board UpdateOrCreateBoard(Board board);
 
     void deleteBoard(Board board);
 }

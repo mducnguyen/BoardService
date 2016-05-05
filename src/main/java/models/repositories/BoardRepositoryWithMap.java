@@ -50,7 +50,7 @@ public class BoardRepositoryWithMap implements IBoardRepository
     }
 
     @Override
-    public Board saveOrUpdateBoard(Board board)
+    public Board UpdateOrCreateBoard(Board board)
     {
         boardsMap.put(board.getId(),board);
         return board;

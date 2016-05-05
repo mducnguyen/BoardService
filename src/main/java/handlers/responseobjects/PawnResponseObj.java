@@ -40,9 +40,6 @@ public class PawnResponseObj
         this.move = pawn.getMove();
     }
 
-    public PawnResponseObj(Pawn pawn, String gameId)
-    {
-    }
 
 
 }

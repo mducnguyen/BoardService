@@ -1,17 +1,12 @@
 package main.java.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import main.java.handlers.requestforms.BoardForm;
-import main.java.handlers.requestforms.FieldForm;
-import main.java.handlers.requestforms.PawnForm;
-import main.java.handlers.requestforms.PositionForm;
-import main.java.handlers.responseobjects.BoardResponseObj;
-import main.java.handlers.responseobjects.BoardsResponseObj;
-import main.java.handlers.responseobjects.PawnResponseObj;
-import main.java.handlers.responseobjects.PawnsResponseObj;
+import main.java.handlers.requestforms.*;
+import main.java.handlers.responseobjects.*;
 import main.java.models.Board;
-import main.java.models.Field;
+import main.java.logiccontroller.Field;
 import main.java.models.Pawn;
+import main.java.models.Place;
 import main.java.models.repositories.*;
 import main.java.models.repositories.exceptions.AlreadyExistException;
 import main.java.models.repositories.exceptions.CannotCreateException;
@@ -35,13 +30,14 @@ public class BoardHandler
 
     private final IPawnRepository pawnRepo;
 
-    private final IFieldRepository fieldRepo;
+    private final IPlaceRepository placeRepo;
 
-    public BoardHandler(IBoardRepository boardRepo, IPawnRepository pawnRepo, IFieldRepository fieldRepo)
+
+    public BoardHandler(IBoardRepository boardRepo, IPawnRepository pawnRepo, IPlaceRepository placeRepo)
     {
         this.boardRepo = boardRepo;
         this.pawnRepo = pawnRepo;
-        this.fieldRepo = fieldRepo;
+        this.placeRepo = placeRepo;
     }
 
     public BoardsResponseObj getAllBoards(Request request, Response response)
@@ -68,6 +64,7 @@ public class BoardHandler
             try {
                 boardRepo.createBoard(board);
                 pawnRepo.createPawnListForBoard(board);
+                placeRepo.createPlaceListForBoard(board);
                 response.status(HttpStatus.SC_CREATED);
                 return new BoardResponseObj(board);
             }catch (CannotCreateException e){
@@ -103,7 +100,7 @@ public class BoardHandler
         try {
             BoardForm boardForm = (new ObjectMapper()).readValue(request.body(), BoardForm.class);
             Board board = new Board(boardForm.getGame(),getFields(boardForm.getFields()),getPositionMapping(boardForm.getPositions()));
-            boardRepo.saveOrUpdateBoard(board);
+            boardRepo.UpdateOrCreateBoard(board);
             pawnRepo.createPawnListForBoard(board);
             responseObj = new BoardResponseObj(board);
             response.status(HttpStatus.SC_OK);
@@ -117,29 +114,47 @@ public class BoardHandler
 
     private List<Field> getFields(List<FieldForm> fields)
     {
-        List<Field> fieldsList = new ArrayList<>();
+        List<Field> fieldList= new ArrayList<>();
         for (FieldForm form: fields
              ) {
-            Field field = new Field(form.getPlace(),getPawns(form.getPawns()));
-            fieldRepo.updateOrCreate(field);
-            fieldsList.add(field);
+            List<String> pawnIds = getPawns(form.getPawns());
+            String place = getPlace(form.getPlace());
+            if(place != "") {
+                Field field = new Field(place, pawnIds);
+                fieldList.add(field);
+            }
         }
 
-        return fieldsList;
+        return fieldList;
     }
 
-    private List<Pawn> getPawns(List<String> pawnIds)
+    private String getPlace(String placeUri)
     {
-        List<Pawn> pawns = new ArrayList<>();
+        String placeId = "";
 
-        for (String pawnUri: pawnIds
+            String[] idArr = placeUri.split("/");
+            String gameId= idArr[idArr.length-3];
+            placeId= idArr[idArr.length-1];
+            Place place = placeRepo.findPlace(gameId,placeId);
+            if (place != null){
+                return placeId;
+            }
+
+        return "";
+    }
+
+    private List<String> getPawns(List<String> pawnUris)
+    {
+        List<String> pawns = new ArrayList<>();
+
+        for (String pawnUri: pawnUris
              ) {
             String[] idArr = pawnUri.split("/");
             String gameId= idArr[idArr.length-3];
             String pawnId= idArr[idArr.length-1];
             Pawn pawn = pawnRepo.findPawn(gameId,pawnId);
             if (pawn != null){
-                pawns.add(pawn);
+                pawns.add(pawnId);
             }
         }
         return pawns;
@@ -295,7 +310,97 @@ public class BoardHandler
         }
 
         pawnRepo.deletePawn(boardId,pawnId);
+        board.removePawn(pawnId);
         response.status(HttpStatus.SC_OK);
         return "Pawn was deleted";
+    }
+
+    public PlacesResponseObj getAllPlacesForBoard(String boardId, Request request, Response response)
+    {
+        List<Place> places = placeRepo.findAllPlacesOfBoard(boardId);
+        PlacesResponseObj placesResponseObj = new PlacesResponseObj(boardId, places);
+        response.status(HttpStatus.SC_OK);
+        return placesResponseObj;
+    }
+
+    public PlaceResponseObj getPlaceForBoard(String boardId, String placeId, Request request, Response response)
+    {
+
+        Board board = boardRepo.findBoard(boardId);
+
+        if(board == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        Place place = placeRepo.findPlace(boardId,placeId);
+
+        if(place == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        response.status(HttpStatus.SC_OK);
+        return new PlaceResponseObj(boardId,place);
+    }
+
+    public PlaceResponseObj saveOrCreatePlaceForBoard(String boardId, String placeId, Request request, Response response)
+    {
+
+        Board board = boardRepo.findBoard(boardId);
+
+        if(board == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        Place place = placeRepo.findPlace(boardId,placeId);
+
+        if(place == null){
+            return createPlaceForBoard(boardId,request,response);
+        }
+
+        PlaceForm placeForm;
+
+        try {
+            placeForm = new ObjectMapper().readValue(request.body(),PlaceForm.class);
+            place.setName(placeForm.getName());
+            place.setBroker(placeForm.getBroker());
+            response.status(HttpStatus.SC_OK);
+            return new PlaceResponseObj(boardId,place);
+        } catch (IOException e) {
+            response.status(HttpStatus.SC_BAD_REQUEST);
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private PlaceResponseObj createPlaceForBoard(String boardId, Request request, Response response)
+    {
+        Board board = boardRepo.findBoard(boardId);
+
+        if(board == null){
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        PlaceForm placeForm;
+
+        try {
+            placeForm = new ObjectMapper().readValue(request.body(), PlaceForm.class);
+            Place place = new Place(boardId,placeForm.getName(),placeForm.getBroker());
+            placeRepo.addPlaceToBoard(boardId,place);
+            board.addField(new Field(place.getId(),new ArrayList<>()));
+            response.status(HttpStatus.SC_CREATED);
+            PlaceResponseObj responseObj = new PlaceResponseObj(boardId,place);
+            return  responseObj;
+        } catch (IOException e) {
+            e.printStackTrace();
+            response.status(HttpStatus.SC_BAD_REQUEST);
+        } catch ( CannotCreateException e ) {
+            response.status(HttpStatus.SC_CONFLICT);
+        }
+        return null;
     }
 }

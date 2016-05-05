@@ -2,10 +2,8 @@ package main.java.handlers.responseobjects;
 
 import lombok.Data;
 import main.java.models.Board;
-import main.java.models.Field;
-import main.java.models.Pawn;
+import main.java.logiccontroller.Field;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +18,7 @@ public class BoardResponseObj
     private static String BOARD_BASE_PATH = "/boards";
     private String id;
     private String game;
-    private List<Field> fields;
+    private List<FieldResponseObj> fields;
     private List<String> pawns;
     private List<PositionResponseObj> positions;
 
@@ -40,25 +38,24 @@ public class BoardResponseObj
     private List<String> getPawns(Board board)
     {
         if(board.getPawns() != null) {
-            List<String> pawnIds = new ArrayList<>();
-            Map<String, Integer> positions = board.getPositions();
-            for (Map.Entry<String, Integer> entry : positions.entrySet()
-                    ) {
-                pawnIds.add(entry.getKey());
-            }
-            return pawnIds;
+            return new PawnsResponseObj(board.getId(),board.getPawns()).getPawns();
         }else {
             return new ArrayList<>();
         }
     }
 
-    private List<Field> getFields(Board board)
+    private List<FieldResponseObj> getFields(Board board)
     {
+        List<FieldResponseObj> fields = new ArrayList<>();
         if(board.getFields() != null) {
-            return board.getFields();
-        } else {
-            return new ArrayList<>();
+            List<Field> fieldList = board.getFields();
+            for (Field field: fieldList
+                 ) {
+                fields.add(new FieldResponseObj(board.getId(), field));
+            }
         }
+
+        return fields;
     }
 
     private List<PositionResponseObj> getPositions(Board board)
@@ -68,7 +65,7 @@ public class BoardResponseObj
             Map<String, Integer> positions = board.getPositions();
             for (Map.Entry<String, Integer> entry : positions.entrySet()
                     ) {
-                PositionResponseObj posRes = new PositionResponseObj(entry.getKey(), entry.getValue());
+                PositionResponseObj posRes = new PositionResponseObj(board.getId(),entry.getKey(), entry.getValue());
                 positionResponses.add(posRes);
             }
             return positionResponses;

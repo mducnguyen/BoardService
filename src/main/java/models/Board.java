@@ -1,8 +1,10 @@
 package main.java.models;
 
-import sun.security.krb5.internal.PAEncTSEnc;
+import main.java.logiccontroller.BoardController;
+import main.java.logiccontroller.Field;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +18,7 @@ public class Board
     private String game;
     private List<Field> fields;
     private Map<String, Integer> positions;
+    private BoardController boardController;
     public Board(String game, List<Field> fields, Map<String,Integer> positions)
     {
         this.game = game;
@@ -54,15 +57,27 @@ public class Board
 
     public Map<String, Integer> getPositions()
     {
-        return positions;
+        return Collections.unmodifiableMap(positions);
     }
 
     public void updatePosition(String pawn, int position){
         positions.put(pawn,position);
     }
 
+    public void removePawn(String pawn){
+        positions.remove(pawn);
+        for (Field field : fields) {
+            List<String> pawnIds = field.getPawns();
+            pawnIds.remove(pawn);
+        }
+    }
+
     public int getPositionOfPawn(String pawn)
     {
         return positions.get(pawn);
+    }
+
+    public void addField(Field field){
+        fields.add(field);
     }
 }
