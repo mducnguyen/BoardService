@@ -19,5 +19,5 @@ public interface IPlaceRepository extends Repository
 
     Place addPlaceToBoard(String boardId, Place place) throws CannotCreateException;
 
-    void createPlaceListForBoard(Board board);
+    void createPlaceListForBoard(String boardId);
 }

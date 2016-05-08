@@ -34,7 +34,7 @@ public class PawnResponseObj
     {
         this.id = BOARD_BASE_PATH+"/"+ board.getId() +"/pawns/" +pawn.getId();
         this.player = pawn.getPlayer();
-        this.place = pawn.getPlace();
+        this.place = "/boards/"+board.getId()+"/places/"+board.getPlaceOfPawn(pawn);
         this.position = board.getPositionOfPawn(pawn.getId());
         this.roll = pawn.getRoll();
         this.move = pawn.getMove();

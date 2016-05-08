@@ -3,6 +3,9 @@ package main.java.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import main.java.handlers.requestforms.*;
 import main.java.handlers.responseobjects.*;
+import main.java.logiccontroller.BoardController;
+import main.java.logiccontroller.Throw;
+import main.java.logiccontroller.exceptions.PlayerNotInturnException;
 import main.java.models.Board;
 import main.java.logiccontroller.Field;
 import main.java.models.Pawn;
@@ -14,7 +17,7 @@ import org.apache.http.HttpStatus;
 import spark.Request;
 import spark.Response;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +48,7 @@ public class BoardHandler
         List<Board> boardList = boardRepo.getAllBoards();
         List<String> boardIds = new ArrayList<>();
 
-        for (Board board: boardList) {
+        for (Board board : boardList) {
             boardIds.add(board.getId());
         }
 
@@ -60,14 +63,13 @@ public class BoardHandler
 
         try {
             boardForm = (new ObjectMapper()).readValue(request.body(), BoardForm.class);
-            Board board = new Board(boardForm.getGame(), new ArrayList<>(),new HashMap<>());
+            BoardController controller = new BoardController(boardForm.getGame(), new ArrayList<>(), new HashMap<>());
+            Board board = new Board(boardForm.getGame(), controller);
             try {
                 boardRepo.createBoard(board);
-                pawnRepo.createPawnListForBoard(board);
-                placeRepo.createPlaceListForBoard(board);
                 response.status(HttpStatus.SC_CREATED);
                 return new BoardResponseObj(board);
-            }catch (CannotCreateException e){
+            } catch (CannotCreateException e) {
                 response.status(HttpStatus.SC_CONFLICT);
             }
         } catch (Exception e) {
@@ -78,11 +80,11 @@ public class BoardHandler
         return null;
     }
 
-    public BoardResponseObj findBoard(String gameid,Request request, Response response)
+    public BoardResponseObj findBoard(String gameid, Request request, Response response)
     {
         Board board = boardRepo.findBoard(gameid);
 
-        if(board == null ){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             response.body("There is no such board!");
             return null;
@@ -94,32 +96,33 @@ public class BoardHandler
 
     }
 
-    public BoardResponseObj saveOrCreateBoard(String gameid, Request request, Response response)
-    {
-        BoardResponseObj responseObj = null;
-        try {
-            BoardForm boardForm = (new ObjectMapper()).readValue(request.body(), BoardForm.class);
-            Board board = new Board(boardForm.getGame(),getFields(boardForm.getFields()),getPositionMapping(boardForm.getPositions()));
-            boardRepo.UpdateOrCreateBoard(board);
-            pawnRepo.createPawnListForBoard(board);
-            responseObj = new BoardResponseObj(board);
-            response.status(HttpStatus.SC_OK);
-        } catch (IOException e) {
-            response.status(HttpStatus.SC_BAD_REQUEST);
-            e.printStackTrace();
-        }
-
-        return responseObj;
-    }
+//    public BoardResponseObj saveOrCreateBoard(String gameid, Request request, Response response)
+//    {
+//        BoardResponseObj responseObj = null;
+//        try {
+//            BoardForm boardForm = (new ObjectMapper()).readValue(request.body(), BoardForm.class);
+////            BoardController controller = new BoardController(boardForm.getGame(), getFields(boardForm.getFields()), getPositionMapping(boardForm.getPositions()));
+////            Board board = new Board(boardForm.getGame(), controller);
+////            boardRepo.UpdateOrCreateBoard(board);
+//
+//            responseObj = new BoardResponseObj(board);
+//            response.status(HttpStatus.SC_OK);
+//        } catch (IOException e) {
+//            response.status(HttpStatus.SC_BAD_REQUEST);
+//            e.printStackTrace();
+//        }
+//
+//        return responseObj;
+//    }
 
     private List<Field> getFields(List<FieldForm> fields)
     {
-        List<Field> fieldList= new ArrayList<>();
-        for (FieldForm form: fields
-             ) {
+        List<Field> fieldList = new ArrayList<>();
+        for (FieldForm form : fields
+                ) {
             List<String> pawnIds = getPawns(form.getPawns());
             String place = getPlace(form.getPlace());
-            if(place != "") {
+            if (place != "") {
                 Field field = new Field(place, pawnIds);
                 fieldList.add(field);
             }
@@ -132,59 +135,46 @@ public class BoardHandler
     {
         String placeId = "";
 
-            String[] idArr = placeUri.split("/");
-            String gameId= idArr[idArr.length-3];
-            placeId= idArr[idArr.length-1];
-            Place place = placeRepo.findPlace(gameId,placeId);
-            if (place != null){
-                return placeId;
-            }
+        String[] idArr = placeUri.split("/");
+        placeId = idArr[idArr.length - 1];
+        return placeId;
 
-        return "";
     }
 
     private List<String> getPawns(List<String> pawnUris)
     {
         List<String> pawns = new ArrayList<>();
 
-        for (String pawnUri: pawnUris
-             ) {
+        for (String pawnUri : pawnUris
+                ) {
             String[] idArr = pawnUri.split("/");
-            String gameId= idArr[idArr.length-3];
-            String pawnId= idArr[idArr.length-1];
-            Pawn pawn = pawnRepo.findPawn(gameId,pawnId);
-            if (pawn != null){
-                pawns.add(pawnId);
-            }
+            String pawnId = idArr[idArr.length - 1];
+            pawns.add(pawnId);
         }
         return pawns;
     }
 
-    private Map<String,Integer> getPositionMapping(List<PositionForm> positions)
+    private Map<String, Integer> getPositionMapping(List<PositionForm> positions)
     {
         Map<String, Integer> postionsMap = new HashMap<>();
 
-        for (PositionForm posform: positions
-             ) {
+        for (PositionForm posform : positions
+                ) {
             String[] idArr = posform.getPawn().split("/");
-            String gameId= idArr[idArr.length-3];
-            String pawnId= idArr[idArr.length-1];
-            Pawn pawn = pawnRepo.findPawn(gameId,pawnId);
-            if (pawn != null){
-                postionsMap.put(pawn.getId(), posform.getPosition());
-            }
+            String pawnId = idArr[idArr.length - 1];
+            postionsMap.put(pawnId, posform.getPosition());
         }
 
-        return  postionsMap;
+        return postionsMap;
     }
 
     public String deleteBoard(String boardId, Request request, Response response)
     {
         Board board = boardRepo.findBoard(boardId);
-        if (board != null){
-            for (String pawnId: board.getPawns()
-                 ) {
-                pawnRepo.deletePawn(boardId,pawnId);
+        if (board != null) {
+            for (String pawnId : board.getPawns()
+                    ) {
+                board.deletePawn(pawnId);
             }
             pawnRepo.deleteBoard(boardId);
             boardRepo.deleteBoard(board);
@@ -197,11 +187,11 @@ public class BoardHandler
 
     public PawnsResponseObj getAllPawnsForBoard(String gameId, Request request, Response response)
     {
-        List<Pawn> pawnList =  pawnRepo.findPawnsForBoard(gameId);
+        List<Pawn> pawnList = pawnRepo.findPawnsForBoard(gameId);
         List<String> pawnIds = new ArrayList<>();
-        if(pawnList != null && pawnList.size() != 0){
-            for (Pawn pawn: pawnList
-                 ) {
+        if (pawnList != null && pawnList.size() != 0) {
+            for (Pawn pawn : pawnList
+                    ) {
                 pawnIds.add(pawn.getId());
             }
         }
@@ -214,27 +204,27 @@ public class BoardHandler
     {
         Board board = boardRepo.findBoard(gameId);
 
-        if(board == null){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
 
-        Pawn pawn = pawnRepo.findPawn(gameId,pawnId);
+        Pawn pawn = board.findPawn(pawnId);
 
-        if(pawn == null){
+        if (pawn == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
 
         response.status(HttpStatus.SC_OK);
-        return new PawnResponseObj(board,pawn);
+        return new PawnResponseObj(board, pawn);
     }
 
     public PawnResponseObj createPawnForBoard(String boardId, Request request, Response response)
     {
         Board board = boardRepo.findBoard(boardId);
 
-        if(board == null){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
@@ -242,18 +232,22 @@ public class BoardHandler
         PawnForm pawnForm;
 
         try {
-            pawnForm = new ObjectMapper().readValue(request.body(),PawnForm.class);
-            Pawn pawn = new Pawn(board.getId(),pawnForm.getPlace(),pawnForm.getPlayer(),pawnForm.getRoll(),pawnForm.getRoll());
-            pawnRepo.addPawnToBoard(boardId,pawn);
-            board.updatePosition(pawn.getId(), pawnForm.getPosition());
-            response.status(HttpStatus.SC_CREATED);
+            pawnForm = new ObjectMapper().readValue(request.body(), PawnForm.class);
+            Pawn pawn = new Pawn(board.getId(),pawnForm.getPlayer(), pawnForm.getRoll(), pawnForm.getRoll());
 
-            PawnResponseObj responseObj = new PawnResponseObj(board,pawn);
-            return  responseObj;
+            if (pawnForm.getPosition() != null) {
+                board.addPawn(pawn, Integer.valueOf(pawnForm.getPosition()));
+            }
+
+            board.addPawn(pawn);
+
+            response.status(HttpStatus.SC_CREATED);
+            PawnResponseObj responseObj = new PawnResponseObj(board, pawn);
+            return responseObj;
         } catch (IOException e) {
             e.printStackTrace();
             response.status(HttpStatus.SC_BAD_REQUEST);
-        } catch (AlreadyExistException | CannotCreateException e ) {
+        } catch (AlreadyExistException | CannotCreateException e) {
             response.status(HttpStatus.SC_CONFLICT);
         }
 
@@ -264,32 +258,40 @@ public class BoardHandler
     {
         Board board = boardRepo.findBoard(boardId);
 
-        if(board == null){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
 
-        Pawn pawn = pawnRepo.findPawn(boardId,pawnId);
+        Pawn pawn = pawnRepo.findPawn(boardId, pawnId);
 
-        if(pawn == null){
-            return createPawnForBoard(boardId,request,response);
+        if (pawn == null) {
+            return createPawnForBoard(boardId, request, response);
         }
 
         PawnForm pawnForm;
 
         try {
-            pawnForm = new ObjectMapper().readValue(request.body(),PawnForm.class);
+            pawnForm = new ObjectMapper().readValue(request.body(), PawnForm.class);
             pawn.setMove(pawnForm.getMove());
-            pawn.setPlace(pawnForm.getPlace());
             pawn.setRoll(pawnForm.getRoll());
-            board.updatePosition(pawn.getId(),pawnForm.getPosition());
 
+            String newPosition = pawnForm.getPosition();
+
+            pawnRepo.updatePawnForBoard(boardId, pawn);
+            if(newPosition != null){
+                int pos = Integer.valueOf(newPosition);
+                board.updatePosition(pawn,pos);
+            }
             response.status(HttpStatus.SC_OK);
-            return new PawnResponseObj(board,pawn);
+            return new PawnResponseObj(board, pawn);
         } catch (IOException e) {
             response.status(HttpStatus.SC_BAD_REQUEST);
             e.printStackTrace();
+        } catch (AlreadyExistException | CannotCreateException e) {
+            response.status(HttpStatus.SC_CONFLICT);
         }
+
 
         return null;
     }
@@ -298,18 +300,17 @@ public class BoardHandler
     {
         Board board = boardRepo.findBoard(boardId);
 
-        if(board == null){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return "Board does not exists";
         }
 
 
-        if(pawnRepo.findPawn(boardId,pawnId) == null){
+        if (pawnRepo.findPawn(boardId, pawnId) == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return "Pawn does not exists";
         }
 
-        pawnRepo.deletePawn(boardId,pawnId);
         board.removePawn(pawnId);
         response.status(HttpStatus.SC_OK);
         return "Pawn was deleted";
@@ -328,20 +329,20 @@ public class BoardHandler
 
         Board board = boardRepo.findBoard(boardId);
 
-        if(board == null){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
 
-        Place place = placeRepo.findPlace(boardId,placeId);
+        Place place = board.findPlace(placeId);
 
-        if(place == null){
+        if (place == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
 
         response.status(HttpStatus.SC_OK);
-        return new PlaceResponseObj(boardId,place);
+        return new PlaceResponseObj(boardId, place);
     }
 
     public PlaceResponseObj saveOrCreatePlaceForBoard(String boardId, String placeId, Request request, Response response)
@@ -349,25 +350,25 @@ public class BoardHandler
 
         Board board = boardRepo.findBoard(boardId);
 
-        if(board == null){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
 
-        Place place = placeRepo.findPlace(boardId,placeId);
+        Place place = placeRepo.findPlace(boardId, placeId);
 
-        if(place == null){
-            return createPlaceForBoard(boardId,request,response);
+        if (place == null) {
+            return createPlaceForBoard(boardId, request, response);
         }
 
         PlaceForm placeForm;
 
         try {
-            placeForm = new ObjectMapper().readValue(request.body(),PlaceForm.class);
+            placeForm = new ObjectMapper().readValue(request.body(), PlaceForm.class);
             place.setName(placeForm.getName());
             place.setBroker(placeForm.getBroker());
             response.status(HttpStatus.SC_OK);
-            return new PlaceResponseObj(boardId,place);
+            return new PlaceResponseObj(boardId, place);
         } catch (IOException e) {
             response.status(HttpStatus.SC_BAD_REQUEST);
             e.printStackTrace();
@@ -380,7 +381,7 @@ public class BoardHandler
     {
         Board board = boardRepo.findBoard(boardId);
 
-        if(board == null){
+        if (board == null) {
             response.status(HttpStatus.SC_NOT_FOUND);
             return null;
         }
@@ -389,18 +390,94 @@ public class BoardHandler
 
         try {
             placeForm = new ObjectMapper().readValue(request.body(), PlaceForm.class);
-            Place place = new Place(boardId,placeForm.getName(),placeForm.getBroker());
-            placeRepo.addPlaceToBoard(boardId,place);
-            board.addField(new Field(place.getId(),new ArrayList<>()));
+            Place place = new Place(boardId, placeForm.getName(), placeForm.getBroker());
+            placeRepo.addPlaceToBoard(boardId, place);
+            board.addField(new Field(place.getId(), new ArrayList<>()));
             response.status(HttpStatus.SC_CREATED);
-            PlaceResponseObj responseObj = new PlaceResponseObj(boardId,place);
-            return  responseObj;
+            PlaceResponseObj responseObj = new PlaceResponseObj(boardId, place);
+            return responseObj;
         } catch (IOException e) {
             e.printStackTrace();
             response.status(HttpStatus.SC_BAD_REQUEST);
-        } catch ( CannotCreateException e ) {
+        } catch (CannotCreateException e) {
             response.status(HttpStatus.SC_CONFLICT);
         }
         return null;
+    }
+
+    public BoardResponseObj makeAMoveOfPawnForBoard(String boardId, String pawnId, Request request, Response response)
+    {
+        Board board = boardRepo.findBoard(boardId);
+
+        if (board == null) {
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        Pawn pawn = board.findPawn(pawnId);
+
+        if (pawn == null) {
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        MoveForm moveForm;
+
+        try {
+            moveForm = new ObjectMapper().readValue(request.body(),MoveForm.class);
+
+            board.movePawn(pawn,moveForm.getMove());
+
+            response.status(HttpStatus.SC_OK);
+            return new BoardResponseObj(board);
+        } catch (IOException e) {
+            response.status(HttpStatus.SC_BAD_REQUEST);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public EventsResponseObj rollTheDices(String boardId, String playerId, Request request, Response response) throws InterruptedException
+    {
+
+        Board board = boardRepo.findBoard(boardId);
+
+        if (board == null) {
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        try {
+            board.checkTurnOfPlayer(playerId);
+            board.throwTheDices(playerId);
+            response.status(HttpStatus.SC_OK);
+            return new EventsResponseObj();
+        } catch (IOException e) {
+            response.status(HttpStatus.SC_BAD_REQUEST);
+            e.printStackTrace();
+        } catch (PlayerNotInturnException e) {
+            response.status(HttpStatus.SC_FORBIDDEN);
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+    public ThrowsResponseObj getAllThrowsOfPawn(String boardId, String pawnId, Request request, Response response)
+    {
+
+        Board board = boardRepo.findBoard(boardId);
+
+        if (board == null) {
+            response.status(HttpStatus.SC_NOT_FOUND);
+            return null;
+        }
+
+        List<Throw> throwList =  board.getThrowsOfPawn(pawnId);
+
+        response.status(HttpStatus.SC_OK);
+
+        return new ThrowsResponseObj(throwList);
     }
 }

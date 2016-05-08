@@ -8,9 +8,9 @@ public class PawnForm
 {
     private String player;
 
-    private String place;
+//    private String place;
 
-    private int position;
+    private String position;
 
     private String roll;
 
@@ -21,12 +21,12 @@ public class PawnForm
         return player;
     }
 
-    public String getPlace()
-    {
-        return place;
-    }
+//    public String getPlace()
+//    {
+//        return place;
+//    }
 
-    public int getPosition()
+    public String getPosition()
     {
         return position;
     }

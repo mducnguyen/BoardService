@@ -1,11 +1,14 @@
 package main.java;
 
 import main.java.handlers.BoardHandler;
+import main.java.logiccontroller.Throw;
 import main.java.models.repositories.*;
 import main.java.transformer.JsonTransformer;
 import spark.Response;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static spark.Spark.*;
 
@@ -33,7 +36,7 @@ public class BoardService
 
         //BOARDS{GAMEID}
         get("/boards/:gameid", (request, response) -> boardHandler.findBoard(request.params(":gameid"), request, response), jsonTransformer);
-        put("/boards/:gameid", (request, response) -> boardHandler.saveOrCreateBoard(request.params(":gameid"), request, response), jsonTransformer);
+//        put("/boards/:gameid", (request, response) -> boardHandler.saveOrCreateBoard(request.params(":gameid"), request, response), jsonTransformer);
         delete("/boards/:gameid", (request, response) -> boardHandler.deleteBoard(request.params(":gameid"), request, response), jsonTransformer);
 
         //BOARDS{GAMEID}PAWNS
@@ -46,6 +49,11 @@ public class BoardService
         delete("/boards/:gameid/pawns/:pawnid", (request, response) -> boardHandler.deletePawnForBoard(request.params(":gameid"), request.params(":pawnid"), request, response), jsonTransformer);
 
         //BOARDS{GAMEID}PAWNS{PAWNID}MOVE
+        post("/boards/:gameid/pawns/:pawnid/move", (request, response) -> boardHandler.makeAMoveOfPawnForBoard(request.params(":gameid"), request.params(":pawnid"), request, response), jsonTransformer);
+
+        //BOARDS{GAMEID}PAWNS{PAWNID}ROLL
+        get("/boards/:gameid/pawns/:pawnid/roll", (request, response) -> boardHandler.getAllThrowsOfPawn(request.params(":gameid"), request.params(":pawnid"),request,response),jsonTransformer);
+        post("/boards/:gameid/pawns/:pawnid/roll", (request, response) -> boardHandler.rollTheDices(request.params(":gameid"), request.params(":pawnid"),request,response),jsonTransformer);
 
         //BOARDS{GAMEID}PLACES
         get("/boards/:gameid/places", (request, response) -> boardHandler.getAllPlacesForBoard(request.params(":gameid"), request, response), jsonTransformer);
@@ -53,6 +61,7 @@ public class BoardService
         //BOARDS{GAMEID}PLACES{PLACEID}
         get("/boards/:gameid/places/:place", (request, response) -> boardHandler.getPlaceForBoard(request.params(":gameid"),request.params(":place"),request,response),jsonTransformer);
         put("/boards/:gameid/places/:place", (request, response) -> boardHandler.saveOrCreatePlaceForBoard(request.params(":gameid"),request.params(":place"),request,response),jsonTransformer);
+
     }
 
     private static void registerRepositories()
@@ -61,5 +70,6 @@ public class BoardService
         RepositoryProvider.register(IBoardRepository.class, new BoardRepositoryWithMap(new HashMap<>()));
         RepositoryProvider.register(IPawnRepository.class, new PawnRepository(new HashMap<>()));
         RepositoryProvider.register(IPlaceRepository.class, new PlaceRepository(new HashMap<>()));
+        RepositoryProvider.register(IRollRepository.class, new RollRepository(new HashMap<>()));
     }
 }

@@ -42,10 +42,10 @@ public class PawnRepository implements IPawnRepository
     }
 
     @Override
-    public void createPawnListForBoard(Board board)
+    public void createPawnListForBoard(String boardId)
     {
-        if (!pawnsMap.containsKey(board.getId())) {
-            pawnsMap.put(board.getId(), new HashMap<>());
+        if (!pawnsMap.containsKey(boardId)) {
+            pawnsMap.put(boardId, new HashMap<>());
         }
     }
 
@@ -78,5 +78,15 @@ public class PawnRepository implements IPawnRepository
         }
         gamePawnMap.put(pawn.getId(),pawn);
         return pawn;
+    }
+
+    @Override
+    public void updatePawnForBoard(String boardId, Pawn pawn)
+    {
+        Map<String, Pawn> gamePawnMap = pawnsMap.get(boardId);
+        List<Pawn> pawns = new ArrayList<>();
+        if(gamePawnMap != null){
+            gamePawnMap.put(pawn.getId(),pawn);
+        }
     }
 }

@@ -18,11 +18,13 @@ public interface IPawnRepository extends Repository
 
     void deletePawn(String boardId, String pawnId);
 
-    void createPawnListForBoard(Board board);
+    void createPawnListForBoard(String board);
 
     void deleteBoard(String boardId);
 
     List<Pawn> findPawnsForBoard(String boardId);
 
     Pawn addPawnToBoard(String boardId, Pawn pawn) throws CannotCreateException, AlreadyExistException;
+
+    void updatePawnForBoard(String boardId, Pawn pawn);
 }

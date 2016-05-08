@@ -62,10 +62,10 @@ public class PlaceRepository implements IPlaceRepository
     }
 
     @Override
-    public void createPlaceListForBoard(Board board)
+    public void createPlaceListForBoard(String board)
     {
-        if (!placeMap.containsKey(board.getId())) {
-            placeMap.put(board.getId(), new HashMap<>());
+        if (!placeMap.containsKey(board)) {
+            placeMap.put(board, new HashMap<>());
         }
     }
 }

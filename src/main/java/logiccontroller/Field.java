@@ -1,5 +1,8 @@
 package main.java.logiccontroller;
 
+import main.java.models.Pawn;
+
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,6 +28,15 @@ public class Field
 
     public List<String> getPawns()
     {
-        return pawns;
+        return Collections.unmodifiableList(pawns);
+    }
+
+    public void addPawn(String pawnId){
+        pawns.add(pawnId);
+    }
+
+    public void releasePawm(Pawn pawn)
+    {
+        pawns.remove(pawn.getId());
     }
 }

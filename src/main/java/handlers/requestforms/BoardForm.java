@@ -13,20 +13,6 @@ public class BoardForm
 {
     private String game;
 
-    private List<FieldForm> fields;
-
-    private List<PositionForm> positions;
-
-    public List<FieldForm> getFields()
-    {
-        return fields;
-    }
-
-    public List<PositionForm> getPositions()
-    {
-        return positions;
-    }
-
     public String getGame()
     {
         return this.game;
