@@ -1,4 +1,4 @@
-package main.java.handlers.responseobjects;
+package handlers.responseobjects;
 
 import lombok.Data;
 

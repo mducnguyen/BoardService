@@ -1,4 +1,4 @@
-package main.java.ServiceProvider;
+package ServiceProvider;
 
 /**
  * @author DucNguyenMinh

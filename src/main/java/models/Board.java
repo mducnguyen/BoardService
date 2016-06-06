@@ -1,11 +1,11 @@
-package main.java.models;
+package models;
 
-import main.java.logiccontroller.BoardController;
-import main.java.logiccontroller.Field;
-import main.java.logiccontroller.Throw;
-import main.java.logiccontroller.exceptions.PlayerNotInturnException;
-import main.java.models.repositories.exceptions.AlreadyExistException;
-import main.java.models.repositories.exceptions.CannotCreateException;
+import logiccontroller.BoardController;
+import logiccontroller.Field;
+import logiccontroller.Throw;
+import logiccontroller.exceptions.PlayerNotInturnException;
+import models.repositories.exceptions.AlreadyExistException;
+import models.repositories.exceptions.CannotCreateException;
 
 import java.io.IOException;
 import java.util.List;

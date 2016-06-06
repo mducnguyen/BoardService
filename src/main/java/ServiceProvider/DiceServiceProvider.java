@@ -1,4 +1,4 @@
-package main.java.ServiceProvider;
+package ServiceProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

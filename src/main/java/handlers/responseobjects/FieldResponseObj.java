@@ -1,7 +1,7 @@
-package main.java.handlers.responseobjects;
+package handlers.responseobjects;
 
 import lombok.Data;
-import main.java.logiccontroller.Field;
+import logiccontroller.Field;
 
 import java.util.ArrayList;
 import java.util.List;

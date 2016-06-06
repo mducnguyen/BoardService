@@ -1,9 +1,7 @@
-package main.java;
-
-import main.java.handlers.BoardHandler;
-import main.java.logiccontroller.Throw;
-import main.java.models.repositories.*;
-import main.java.transformer.JsonTransformer;
+import handlers.BoardHandler;
+import logiccontroller.Throw;
+import models.repositories.*;
+import transformer.JsonTransformer;
 import spark.Response;
 
 import java.util.HashMap;

@@ -1,9 +1,9 @@
-package main.java.models.repositories;
+package models.repositories;
 
-import main.java.models.Board;
-import main.java.models.Place;
-import main.java.models.repositories.exceptions.AlreadyExistException;
-import main.java.models.repositories.exceptions.CannotCreateException;
+import models.Board;
+import models.Place;
+import models.repositories.exceptions.AlreadyExistException;
+import models.repositories.exceptions.CannotCreateException;
 
 import java.util.ArrayList;
 import java.util.HashMap;

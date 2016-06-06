@@ -1,8 +1,8 @@
-package main.java.handlers.responseobjects;
+package handlers.responseobjects;
 
 import lombok.Data;
-import main.java.logiccontroller.Throw;
-import main.java.models.repositories.RollRepository;
+import logiccontroller.Throw;
+import models.repositories.RollRepository;
 
 import java.util.ArrayList;
 import java.util.List;

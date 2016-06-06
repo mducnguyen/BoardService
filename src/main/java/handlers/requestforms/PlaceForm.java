@@ -1,4 +1,4 @@
-package main.java.handlers.requestforms;
+package handlers.requestforms;
 
 /**
  * @author DucNguyenMinh

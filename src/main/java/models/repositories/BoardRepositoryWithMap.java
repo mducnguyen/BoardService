@@ -1,7 +1,7 @@
-package main.java.models.repositories;
+package models.repositories;
 
-import main.java.models.Board;
-import main.java.models.repositories.exceptions.CannotCreateException;
+import models.Board;
+import models.repositories.exceptions.CannotCreateException;
 
 import java.util.ArrayList;
 import java.util.List;

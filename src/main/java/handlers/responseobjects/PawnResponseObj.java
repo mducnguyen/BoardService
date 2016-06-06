@@ -1,8 +1,8 @@
-package main.java.handlers.responseobjects;
+package handlers.responseobjects;
 
 import lombok.Data;
-import main.java.models.Board;
-import main.java.models.Pawn;
+import models.Board;
+import models.Pawn;
 
 /**
  * @author DucNguyenMinh

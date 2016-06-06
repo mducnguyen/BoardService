@@ -1,4 +1,4 @@
-package main.java.logiccontroller.exceptions;
+package logiccontroller.exceptions;
 
 /**
  * @author DucNguyenMinh

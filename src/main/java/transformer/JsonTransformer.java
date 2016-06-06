@@ -1,4 +1,4 @@
-package main.java.transformer;
+package transformer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

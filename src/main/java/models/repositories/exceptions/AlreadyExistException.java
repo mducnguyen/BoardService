@@ -1,4 +1,4 @@
-package main.java.models.repositories.exceptions;
+package models.repositories.exceptions;
 
 /**
  * @author DucNguyenMinh

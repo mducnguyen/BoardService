@@ -1,6 +1,6 @@
-package main.java.models.repositories;
+package models.repositories;
 
-import main.java.logiccontroller.Throw;
+import logiccontroller.Throw;
 
 import java.util.List;
 

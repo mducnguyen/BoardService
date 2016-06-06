@@ -1,7 +1,7 @@
-package main.java.handlers.responseobjects;
+package handlers.responseobjects;
 
 import lombok.Data;
-import main.java.models.Place;
+import models.Place;
 
 /**
  * @author DucNguyenMinh

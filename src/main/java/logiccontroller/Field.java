@@ -1,6 +1,6 @@
-package main.java.logiccontroller;
+package logiccontroller;
 
-import main.java.models.Pawn;
+import models.Pawn;
 
 import java.util.Collections;
 import java.util.List;

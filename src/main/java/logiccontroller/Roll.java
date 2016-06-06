@@ -1,4 +1,4 @@
-package main.java.logiccontroller;
+package logiccontroller;
 
 /**
  * @author DucNguyenMinh

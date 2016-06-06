@@ -1,7 +1,7 @@
-package main.java.handlers.responseobjects;
+package handlers.responseobjects;
 
 import lombok.Data;
-import main.java.models.Board;
+import models.Board;
 
 import java.io.Serializable;
 import java.util.ArrayList;
